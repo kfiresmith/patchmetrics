@@ -8,32 +8,23 @@ else
 fi
 
 
+measurement="package_updates"
+
 case $ID_LIKE in
   *"rhel"*)
-      variant=redhat
+      security_updates="$(yum list-sec -q | wc -l)"
+      all_updates="$(yum check-update -q | wc -l)"
+      tag_set="os=linux,distrofamily=redhat"
       ;;
   *"debian"*)
-      variant=debian
+      updatedata="$(/usr/lib/update-notifier/apt-check 2>&1)"
+      security_updates="$(echo $updatedata | cut -d";" -f2)"
+      all_updates="$(echo $updatedata | cut -d";" -f1)"
+      tag_set="os=linux,distrofamily=debian"
       ;;
   *)
     exit 23
     ;;
 esac
-
-
-if [ "$variant" == "redhat" ]; then
-  security_updates="$(yum list-sec -q | wc -l)"
-  all_updates="$(yum check-update -q | wc -l)"
-else
-  updatedata="$(/usr/lib/update-notifier/apt-check 2>&1)"
-  security_updates="$(echo $updatedata | cut -d";" -f2)"
-  all_updates="$(echo $updatedata | cut -d";" -f1)"
-fi
-
-measurement="package_updates"
-tag_set="os=linux,distro=$variant"
-
-influx_timestamp="$(date +%s%N)"
-
 
 printf "$measurement,$tag_set $field_set security_updates=$security_updates,all_updates=$all_updates $(date +%s%N) \n"
