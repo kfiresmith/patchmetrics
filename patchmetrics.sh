@@ -1,5 +1,19 @@
 #!/bin/bash
-
+#
+# For supported distros and versions, report unapplied available OS patches.
+#  Depends on yum/apt to be in good working order with accesss to working upstream repos
+#  that provide accurate security bulletins
+#
+# If yum/apt are broken on a host, there may be security patches that aren't applied but
+#  aren't reported accurately.
+#
+# Output format for InfluxDB 1.x
+#
+# Currently supports Debian 8+, RHEL/CentOS 6+, and Ubuntu 14.04+.  Unsupported distros/versions
+#  will report as EOL, with 999/999 updates to apply.  This is to make sure they show up
+#  bold and red in Grafana because unsupported hosts should be decommissioned ASAP.
+#
+# 2020-11-11 Kodiak Firesmith <firesmith@protonmail.com> 
 
 measurement="package_updates"
 variant="redhat"
@@ -33,7 +47,9 @@ case $variant in
       fi
       ;;
   unsupported)
-    exit 23
+    security_updates="999"
+    all_updates="999"
+    tag_set="os=linux,distrofamily=eol"
     ;;
 esac
 
