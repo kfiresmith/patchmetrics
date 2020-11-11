@@ -1,28 +1,38 @@
 #!/bin/bash
 
-# We use /etc/os-release to determine if we are on a supported variant
-if [ -f /etc/os-release ]; then
-        ID_LIKE="$(grep ID_LIKE /etc/os-release | awk -F"=" '{print $2}' | tr '[:upper:]' '[:lower:]')"
-else
-        exit 22
-fi
-
 
 measurement="package_updates"
+variant="redhat"
+unameout="$(uname -a | tr '[:upper:]' '[:lower:]')"
 
-case $ID_LIKE in
-  *"rhel"*)
-      security_updates="$(yum list-sec -q | wc -l)"
+which yum 1>/dev/null || variant="debian"
+
+if [ "$variant" == "debian" ]; then
+  which apt 1>/dev/null || variant="unsupported"
+fi
+
+case $variant in
+  redhat)
+      security_updates="$(yum -q updateinfo list security | wc -l)"
       all_updates="$(yum check-update -q | wc -l)"
       tag_set="os=linux,distrofamily=redhat"
       ;;
-  *"debian"*)
-      updatedata="$(/usr/lib/update-notifier/apt-check 2>&1)"
-      security_updates="$(echo $updatedata | cut -d";" -f2)"
-      all_updates="$(echo $updatedata | cut -d";" -f1)"
-      tag_set="os=linux,distrofamily=debian"
+  debian)
+      if [ -f "/usr/lib/update-notifier/apt-check" ]; then
+        updatedata="$(/usr/lib/update-notifier/apt-check 2>&1)"
+        security_updates="$(echo $updatedata | cut -d";" -f2)"
+        all_updates="$(echo $updatedata | cut -d";" -f1)"
+      else
+        security_updates="$(apt-get upgrade -s | egrep '^Inst ' | grep -i security | wc -l)"
+        all_updates="$(apt-get upgrade -s | egrep '^Inst ' | wc -l)"
+      fi
+      if [ x"$(echo $unameout | grep ubuntu)" == x ]; then
+        tag_set="os=linux,distrofamily=debian"
+      else
+        tag_set="os=linux,distrofamily=ubuntu"
+      fi
       ;;
-  *)
+  unsupported)
     exit 23
     ;;
 esac
