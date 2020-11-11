@@ -47,10 +47,10 @@ case $variant in
       fi
       ;;
   unsupported)
-    security_updates="999"
-    all_updates="999"
-    tag_set="os=linux,distrofamily=eol"
-    ;;
+      security_updates="999"
+      all_updates="999"
+      tag_set="os=linux,distrofamily=eol"
+      ;;
 esac
 
 printf "$measurement,$tag_set $field_set security_updates=$security_updates,all_updates=$all_updates $(date +%s%N) \n"
